@@ -3,7 +3,9 @@ import json
 from httmock import urlmatch, HTTMock
 import easydb
 
-SPACE_NAME = "testSpace"
+SPACE_NAME = 'testSpace'
+BUCKET_ELEMENT_ID = 'testId'
+BUCKET_NAME = 'testBucket'
 
 
 def with_mocked_api(api_mock):
@@ -16,7 +18,7 @@ def with_mocked_api(api_mock):
     return decorator
 
 
-@urlmatch(path='/api/v1/spaces')
+@urlmatch(path='/api/v1/spaces', method='POST')
 def create_space_api_mock(url, request):
     space_name = request.original.json['spaceName']
     return {
@@ -25,7 +27,7 @@ def create_space_api_mock(url, request):
     }
 
 
-@urlmatch(path=f'/api/v1/spaces/{SPACE_NAME}')
+@urlmatch(path=f'/api/v1/spaces/{SPACE_NAME}', method='GET')
 def get_space_api_mock(url, request):
     return {
         'status_code': 200,
@@ -33,7 +35,7 @@ def get_space_api_mock(url, request):
     }
 
 
-@urlmatch(path=f'/api/v1/spaces/{SPACE_NAME}')
+@urlmatch(path=f'/api/v1/spaces/{SPACE_NAME}', method='GET')
 def space_exists_api_mock(url, request):
     return {
         'status_code': 200,
@@ -41,7 +43,7 @@ def space_exists_api_mock(url, request):
     }
 
 
-@urlmatch(path=f'/api/v1/spaces/{SPACE_NAME}')
+@urlmatch(path=f'/api/v1/spaces/{SPACE_NAME}', method='DELETE')
 def remove_space_api_mock(url, request):
     return {
         'status_code': 200
@@ -88,3 +90,44 @@ class EasydbTestCase(TestCase):
 
         # then
         self.assertTrue(removed)
+
+
+@urlmatch(path=f'/api/v1/spaces/{SPACE_NAME}/{BUCKET_NAME}', method='POST')
+def add_element_to_bucket_api_mock(url, request):
+    return {
+        'status_code': 201,
+        'content': json.dumps({
+            'id': BUCKET_ELEMENT_ID,
+            'bucketName': BUCKET_NAME,
+            'fields': [
+                {
+                    'name': 'firstName',
+                    'value': 'John'
+                }
+            ]
+        })
+    }
+
+
+class BucketTestCase(TestCase):
+
+    @with_mocked_api(add_element_to_bucket_api_mock)
+    @with_mocked_api(get_space_api_mock)
+    def test_should_add_element_to_bucket(self):
+        # given
+        space = easydb.get_space(SPACE_NAME)
+
+        # and
+        bucket = space.get_bucket(BUCKET_NAME)
+
+        # when
+        saved_element = bucket.add_element({'firstName': 'John'})
+
+        # then
+        self.assertEqual(saved_element['fields']['firstName'], 'John')
+
+        # and
+        self.assertEqual(saved_element['id'], BUCKET_ELEMENT_ID)
+
+        # and
+        self.assertEqual(saved_element['bucketName'], BUCKET_NAME)
