@@ -17,6 +17,30 @@ class Bucket:
             'fields': {field['name']: field['value'] for field in body['fields']}
         }
 
+    def remove_element(self, element_id):
+        response = requests.delete(f'{EASYDB_URL}/api/v1/spaces/{self.space.name}/{self.bucket_name}/{element_id}')
+        return response.status_code == 200
+
+    def update(self, element_id, element):
+        response = requests.put(f'{EASYDB_URL}/api/v1/spaces/{self.space.name}/{self.bucket_name}/{element_id}',
+                                json={
+                                    'fields': [{'name': field_name, 'value': field_value} for field_name, field_value in element.items()]
+                                })
+        body = response.json()
+        return {
+            'id': body['id'],
+            'bucketName': body['bucketName'],
+            'fields': {field['name']: field['value'] for field in body['fields']}
+        }
+
+    def all(self):
+        response = requests.get(f'{EASYDB_URL}/api/v1/spaces/{self.space.name}/{self.bucket_name}')
+        body = response.json()
+        return [{
+            'id': element['id'],
+            'bucketName': element['bucketName'],
+            'fields': {field['name']: field['value'] for field in element['fields']}
+        } for element in body]
 
 class Space:
     def __init__(self, name):

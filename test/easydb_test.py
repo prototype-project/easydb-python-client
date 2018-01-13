@@ -50,7 +50,7 @@ def remove_space_api_mock(url, request):
     }
 
 
-class EasydbTestCase(TestCase):
+class EasydbTest(TestCase):
 
     @with_mocked_api(create_space_api_mock)
     def test_should_create_new_space(self):
@@ -109,7 +109,50 @@ def add_element_to_bucket_api_mock(url, request):
     }
 
 
-class BucketTestCase(TestCase):
+@urlmatch(path=f'/api/v1/spaces/{SPACE_NAME}/{BUCKET_NAME}/{BUCKET_ELEMENT_ID}', method='DELETE')
+def remove_element_from_bucket_api_mock(url, request):
+    return {
+        'status_code': 200
+    }
+
+
+@urlmatch(path=f'/api/v1/spaces/{SPACE_NAME}/{BUCKET_NAME}/{BUCKET_ELEMENT_ID}', method='PUT')
+def update_element_from_bucket_api_mock(url, request):
+    return {
+        'status_code': 200,
+        'content': json.dumps({
+            'id': BUCKET_ELEMENT_ID,
+            'bucketName': BUCKET_NAME,
+            'fields': [
+                {
+                    'name': 'firstName',
+                    'value': 'John'
+                }
+            ]
+        })
+    }
+
+
+@urlmatch(path=f'/api/v1/spaces/{SPACE_NAME}/{BUCKET_NAME}', method='GET')
+def get_all_bucket_elements_api_mock(url, request):
+    return {
+        'status_code': 200,
+        'content': json.dumps([
+            {
+                'id': BUCKET_ELEMENT_ID,
+                'bucketName': BUCKET_NAME,
+                'fields': [
+                    {
+                        'name': 'firstName',
+                        'value': 'John'
+                    }
+                ]
+            }
+        ])
+    }
+
+
+class BucketTest(TestCase):
 
     @with_mocked_api(add_element_to_bucket_api_mock)
     @with_mocked_api(get_space_api_mock)
@@ -131,3 +174,48 @@ class BucketTestCase(TestCase):
 
         # and
         self.assertEqual(saved_element['bucketName'], BUCKET_NAME)
+
+    @with_mocked_api(get_space_api_mock)
+    @with_mocked_api(remove_space_api_mock)
+    def test_should_remove_element_from_bucket(self):
+        # given
+        bucket = easydb.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
+        # and bucket element
+
+        # when
+        removed = bucket.remove_element(BUCKET_ELEMENT_ID)
+
+        # then
+        self.assertTrue(removed)
+
+    @with_mocked_api(get_space_api_mock)
+    @with_mocked_api(update_element_from_bucket_api_mock)
+    def test_should_update_element_in_bucket(self):
+        # given
+        bucket = easydb.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
+
+        # and bucket element
+
+        # when
+        updated_element = bucket.update(BUCKET_ELEMENT_ID, {'firstName': 'John'})
+
+        # then
+        self.assertEqual(updated_element['fields']['firstName'], 'John')
+
+        # and
+        self.assertEqual(updated_element['id'], BUCKET_ELEMENT_ID)
+
+        # and
+        self.assertEqual(updated_element['bucketName'], BUCKET_NAME)
+
+    @with_mocked_api(get_space_api_mock)
+    @with_mocked_api(get_all_bucket_elements_api_mock)
+    def test_should_get_all_elements_from_bucket(self):
+        # given
+        bucket = easydb.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
+
+        # when
+        elements = bucket.all()
+
+        # then
+        self.assertEqual(len(elements), 1)
