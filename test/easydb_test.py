@@ -152,6 +152,23 @@ def get_all_bucket_elements_api_mock(url, request):
     }
 
 
+@urlmatch(path=f'/api/v1/spaces/{SPACE_NAME}/{BUCKET_NAME}/{BUCKET_ELEMENT_ID}', method='GET')
+def get_element_from_bucket_api_mock(url, request):
+    return {
+        'status_code': 200,
+        'content': json.dumps({
+            'id': BUCKET_ELEMENT_ID,
+            'bucketName': BUCKET_NAME,
+            'fields': [
+                {
+                    'name': 'firstName',
+                    'value': 'John'
+                }
+            ]
+        })
+    }
+
+
 class BucketTest(TestCase):
 
     @with_mocked_api(add_element_to_bucket_api_mock)
@@ -219,3 +236,21 @@ class BucketTest(TestCase):
 
         # then
         self.assertEqual(len(elements), 1)
+
+    @with_mocked_api(get_space_api_mock)
+    @with_mocked_api(get_element_from_bucket_api_mock)
+    def test_should_get_element_from_bucket(self):
+        # given
+        bucket = easydb.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
+
+        # when
+        element = bucket.get(BUCKET_ELEMENT_ID)
+
+        # then
+        self.assertEqual(element, {
+            'id': BUCKET_ELEMENT_ID,
+            'bucketName': BUCKET_NAME,
+            'fields': {
+                'firstName': 'John'
+            }
+        })

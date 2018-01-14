@@ -42,6 +42,16 @@ class Bucket:
             'fields': {field['name']: field['value'] for field in element['fields']}
         } for element in body]
 
+    def get(self, element_id):
+        response = requests.get(f'{EASYDB_URL}/api/v1/spaces/{self.space.name}/{self.bucket_name}/{element_id}')
+        body = response.json()
+        return {
+            'id': body['id'],
+            'bucketName': body['bucketName'],
+            'fields': {field['name']: field['value'] for field in body['fields']}
+        }
+
+
 class Space:
     def __init__(self, name):
         self.name = name
