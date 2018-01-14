@@ -7,42 +7,72 @@ class ElementNotFound(ValueError):
     pass
 
 
+class SpaceAlreadyExists(ValueError):
+    pass
+
+
+class InvalidElementFormat(ValueError):
+    pass
+
+
+class ServerError(RuntimeError):
+    pass
+
+
 class Bucket:
     def __init__(self, space, bucket_name):
         self.space = space
         self.bucket_name = bucket_name
 
     def add(self, element):
-        response = requests.post(f'{EASYDB_URL}/api/v1/spaces/{self.space.name}/{self.bucket_name}', json=element)
-        body = response.json()
-        return {
-            'id': body['id'],
-            'bucketName': body['bucketName'],
-            'fields': {field['name']: field['value'] for field in body['fields']}
-        }
-
-    def remove(self, element_id):
-        response = requests.delete(f'{EASYDB_URL}/api/v1/spaces/{self.space.name}/{self.bucket_name}/{element_id}')
-        return response.status_code == 200
-
-    def update(self, element_id, element):
-        response = requests.put(f'{EASYDB_URL}/api/v1/spaces/{self.space.name}/{self.bucket_name}/{element_id}',
-                                json={
-                                    'fields': [{'name': field_name, 'value': field_value} for field_name, field_value in element.items()]
-                                })
-        if response.status_code == 200:
+        response = requests.post(
+            f'{EASYDB_URL}/api/v1/{self.space.name}/{self.bucket_name}',
+            json={
+                'fields': [{'name': field_name, 'value': field_value} for field_name, field_value in element.items()]
+            })
+        if response.status_code == 201:
             body = response.json()
             return {
                 'id': body['id'],
                 'bucketName': body['bucketName'],
                 'fields': {field['name']: field['value'] for field in body['fields']}
             }
-        else:  # 404
-            assert response.status_code == 404
+        elif response.status_code == 400:
+            raise InvalidElementFormat()
+        else:
+            assert response.status_code == 500
+            raise ServerError()
+
+    def remove(self, element_id):
+        response = requests.delete(f'{EASYDB_URL}/api/v1/{self.space.name}/{self.bucket_name}/{element_id}')
+        if response.status_code == 404:
             raise ElementNotFound()
+        elif response.status_code == 500:
+            raise ServerError()
+        else:
+            assert response.status_code == 200
+
+    def update(self, element_id, element):
+        response = requests.put(f'{EASYDB_URL}/api/v1/{self.space.name}/{self.bucket_name}/{element_id}',
+                                json={
+                                    'fields': [{'name': field_name, 'value': field_value} for field_name, field_value in element.items()]
+                                })
+        if response.status_code == 200:
+            return {
+                'id': element_id,
+                'bucketName': self.bucket_name,
+                'fields': element
+            }
+        elif response.status_code == 404:
+            raise ElementNotFound()
+        elif response.status_code == 400:
+            raise InvalidElementFormat()
+        else:
+            assert response.status_code == 500
+            raise ServerError()
 
     def all(self):
-        response = requests.get(f'{EASYDB_URL}/api/v1/spaces/{self.space.name}/{self.bucket_name}')
+        response = requests.get(f'{EASYDB_URL}/api/v1/{self.space.name}/{self.bucket_name}')
         assert response.status_code == 200
         body = response.json()
         return [{
@@ -52,7 +82,7 @@ class Bucket:
         } for element in body]
 
     def get(self, element_id):
-        response = requests.get(f'{EASYDB_URL}/api/v1/spaces/{self.space.name}/{self.bucket_name}/{element_id}')
+        response = requests.get(f'{EASYDB_URL}/api/v1/{self.space.name}/{self.bucket_name}/{element_id}')
         if response.status_code == 200:
             body = response.json()
             return {
@@ -60,9 +90,10 @@ class Bucket:
                 'bucketName': body['bucketName'],
                 'fields': {field['name']: field['value'] for field in body['fields']}
             }
-        else:  # 404
-            assert response.status_code == 404
-            raise ElementNotFound
+        elif response.status_code == 404:
+            raise ElementNotFound()
+        else:
+            raise ServerError()
 
 
 class Space:
@@ -78,7 +109,11 @@ def create_space(unique_space_name):
         f'{EASYDB_URL}/api/v1/spaces',
         json={'spaceName': unique_space_name}
     )
-    return Space(response.json()['spaceName'])
+    if response.status_code == 201:
+        return Space(response.json()['spaceName'])
+    else:  # 400
+        assert response.status_code == 400
+        raise SpaceAlreadyExists()
 
 
 def get_space(space_name):
