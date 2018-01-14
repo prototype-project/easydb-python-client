@@ -43,6 +43,7 @@ class Bucket:
 
     def all(self):
         response = requests.get(f'{EASYDB_URL}/api/v1/spaces/{self.space.name}/{self.bucket_name}')
+        assert response.status_code == 200
         body = response.json()
         return [{
             'id': element['id'],
