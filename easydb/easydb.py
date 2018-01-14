@@ -12,7 +12,7 @@ class Bucket:
         self.space = space
         self.bucket_name = bucket_name
 
-    def add_element(self, element):
+    def add(self, element):
         response = requests.post(f'{EASYDB_URL}/api/v1/spaces/{self.space.name}/{self.bucket_name}', json=element)
         body = response.json()
         return {
@@ -21,7 +21,7 @@ class Bucket:
             'fields': {field['name']: field['value'] for field in body['fields']}
         }
 
-    def remove_element(self, element_id):
+    def remove(self, element_id):
         response = requests.delete(f'{EASYDB_URL}/api/v1/spaces/{self.space.name}/{self.bucket_name}/{element_id}')
         return response.status_code == 200
 

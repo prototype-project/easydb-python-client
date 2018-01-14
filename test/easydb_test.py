@@ -188,7 +188,7 @@ class BucketTest(TestCase):
         bucket = space.get_bucket(BUCKET_NAME)
 
         # when
-        saved_element = bucket.add_element({'firstName': 'John'})
+        saved_element = bucket.add({'firstName': 'John'})
 
         # then
         self.assertEqual(saved_element['fields']['firstName'], 'John')
@@ -207,7 +207,7 @@ class BucketTest(TestCase):
         # and bucket element
 
         # when
-        removed = bucket.remove_element(BUCKET_ELEMENT_ID)
+        removed = bucket.remove(BUCKET_ELEMENT_ID)
 
         # then
         self.assertTrue(removed)
@@ -270,3 +270,4 @@ class BucketTest(TestCase):
 
         with self.assertRaises(easydb.ElementNotFound):  # then
             bucket.update('nonexistentId', {'firstName': 'Johny'})  # when
+
