@@ -3,6 +3,10 @@ import requests
 EASYDB_URL = 'https://easy-db.herokuapp.com'
 
 
+class ElementNotFound(ValueError):
+    pass
+
+
 class Bucket:
     def __init__(self, space, bucket_name):
         self.space = space
@@ -26,12 +30,16 @@ class Bucket:
                                 json={
                                     'fields': [{'name': field_name, 'value': field_value} for field_name, field_value in element.items()]
                                 })
-        body = response.json()
-        return {
-            'id': body['id'],
-            'bucketName': body['bucketName'],
-            'fields': {field['name']: field['value'] for field in body['fields']}
-        }
+        if response.status_code == 200:
+            body = response.json()
+            return {
+                'id': body['id'],
+                'bucketName': body['bucketName'],
+                'fields': {field['name']: field['value'] for field in body['fields']}
+            }
+        else:  # 404
+            assert response.status_code == 404
+            raise ElementNotFound()
 
     def all(self):
         response = requests.get(f'{EASYDB_URL}/api/v1/spaces/{self.space.name}/{self.bucket_name}')
