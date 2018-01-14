@@ -52,12 +52,16 @@ class Bucket:
 
     def get(self, element_id):
         response = requests.get(f'{EASYDB_URL}/api/v1/spaces/{self.space.name}/{self.bucket_name}/{element_id}')
-        body = response.json()
-        return {
-            'id': body['id'],
-            'bucketName': body['bucketName'],
-            'fields': {field['name']: field['value'] for field in body['fields']}
-        }
+        if response.status_code == 200:
+            body = response.json()
+            return {
+                'id': body['id'],
+                'bucketName': body['bucketName'],
+                'fields': {field['name']: field['value'] for field in body['fields']}
+            }
+        else:  # 404
+            assert response.status_code == 404
+            raise ElementNotFound
 
 
 class Space:

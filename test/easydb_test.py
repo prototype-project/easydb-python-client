@@ -176,6 +176,13 @@ def try_to_update_nonexistent_element_api_mock(url, request):
     }
 
 
+@urlmatch(path=f'/api/v1/spaces/{SPACE_NAME}/{BUCKET_NAME}/{BUCKET_ELEMENT_ID}', method='GET')
+def try_to_get_nonexistent_element_api_mock(url, request):
+    return {
+        'status_code': 404
+    }
+
+
 class BucketTest(TestCase):
 
     @with_mocked_api(add_element_to_bucket_api_mock)
@@ -269,5 +276,13 @@ class BucketTest(TestCase):
         bucket = easydb.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
 
         with self.assertRaises(easydb.ElementNotFound):  # then
-            bucket.update('nonexistentId', {'firstName': 'Johny'})  # when
+            bucket.update(BUCKET_ELEMENT_ID, {'firstName': 'Johny'})  # when
 
+    @with_mocked_api(get_space_api_mock)
+    @with_mocked_api(try_to_get_nonexistent_element_api_mock)
+    def test_should_throw_error_when_trying_to_get_nonexistent_element(self):
+        # given
+        bucket = easydb.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
+
+        with self.assertRaises(easydb.ElementNotFound):  # then
+            bucket.get(BUCKET_ELEMENT_ID)  # when
