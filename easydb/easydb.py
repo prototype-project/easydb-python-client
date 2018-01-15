@@ -131,7 +131,7 @@ def get_space(space_name):
         return Space(response.json()['spaceName'])
     else:
         assert response.status_code == 404
-        return None
+        raise SpaceNotFound()
 
 
 def space_exists(space_name):

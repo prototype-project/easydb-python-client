@@ -64,6 +64,13 @@ def try_to_remove_nonexistent_space_api_mock(url, request):
     }
 
 
+@urlmatch(path='/api/v1/spaces/{SPACE_NAME}'.format(SPACE_NAME=SPACE_NAME), method='GET')
+def try_to_get_nonexistent_space_api_mock(url, request):
+    return {
+        'status_code': 404
+    }
+
+
 class EasydbTest(TestCase):
 
     @with_mocked_api(create_space_api_mock)
@@ -114,6 +121,11 @@ class EasydbTest(TestCase):
     def test_should_throw_error_when_trying_to_remove_nonexistent_space(self):
         with self.assertRaises(easydb.SpaceNotFound):  # then
             easydb.remove_space(SPACE_NAME)  # when
+
+    @with_mocked_api(try_to_get_nonexistent_space_api_mock)
+    def test_should_throw_error_when_trying_to_get_nonexistent_space(self):
+        with self.assertRaises(easydb.SpaceNotFound):  # then
+            easydb.get_space(SPACE_NAME)  # when
 
 
 @urlmatch(path='/api/v1/{SPACE_NAME}/{BUCKET_NAME}'.format(SPACE_NAME=SPACE_NAME, BUCKET_NAME=BUCKET_NAME), method='POST')
