@@ -27,7 +27,7 @@ def create_space_api_mock(url, request):
     }
 
 
-@urlmatch(path=f'/api/v1/spaces/{SPACE_NAME}', method='GET')
+@urlmatch(path='/api/v1/spaces/{SPACE_NAME}'.format(SPACE_NAME=SPACE_NAME), method='GET')
 def get_space_api_mock(url, request):
     return {
         'status_code': 200,
@@ -35,7 +35,7 @@ def get_space_api_mock(url, request):
     }
 
 
-@urlmatch(path=f'/api/v1/spaces/{SPACE_NAME}', method='GET')
+@urlmatch(path='/api/v1/spaces/{SPACE_NAME}'.format(SPACE_NAME=SPACE_NAME), method='GET')
 def space_exists_api_mock(url, request):
     return {
         'status_code': 200,
@@ -43,14 +43,14 @@ def space_exists_api_mock(url, request):
     }
 
 
-@urlmatch(path=f'/api/v1/spaces/{SPACE_NAME}', method='DELETE')
+@urlmatch(path='/api/v1/spaces/{SPACE_NAME}'.format(SPACE_NAME=SPACE_NAME), method='DELETE')
 def remove_space_api_mock(url, request):
     return {
         'status_code': 200
     }
 
 
-@urlmatch(path=f'/api/v1/spaces', method='POST')
+@urlmatch(path='/api/v1/spaces'.format(SPACE_NAME=SPACE_NAME), method='POST')
 def try_to_create_space_with_non_unique_name_api_mock(url, request):
     return {
         'status_code': 400
@@ -96,7 +96,7 @@ class EasydbTest(TestCase):
         removed = easydb.remove_space(SPACE_NAME)
 
         # then
-        self.assertTrue(removed)
+        self.assertIsNone(removed)
 
     @with_mocked_api(try_to_create_space_with_non_unique_name_api_mock)
     def test_should_throw_error_when_trying_to_create_space_with_non_unique_name(self):
@@ -107,7 +107,7 @@ class EasydbTest(TestCase):
         pass
 
 
-@urlmatch(path=f'/api/v1/{SPACE_NAME}/{BUCKET_NAME}', method='POST')
+@urlmatch(path='/api/v1/{SPACE_NAME}/{BUCKET_NAME}'.format(SPACE_NAME=SPACE_NAME, BUCKET_NAME=BUCKET_NAME), method='POST')
 def add_element_to_bucket_api_mock(url, request):
     return {
         'status_code': 201,
@@ -124,14 +124,16 @@ def add_element_to_bucket_api_mock(url, request):
     }
 
 
-@urlmatch(path=f'/api/v1/{SPACE_NAME}/{BUCKET_NAME}/{BUCKET_ELEMENT_ID}', method='DELETE')
+@urlmatch(path='/api/v1/{SPACE_NAME}/{BUCKET_NAME}/{BUCKET_ELEMENT_ID}'.format(
+    SPACE_NAME=SPACE_NAME, BUCKET_NAME=BUCKET_NAME, BUCKET_ELEMENT_ID=BUCKET_ELEMENT_ID), method='DELETE')
 def remove_element_from_bucket_api_mock(url, request):
     return {
         'status_code': 200
     }
 
 
-@urlmatch(path=f'/api/v1/{SPACE_NAME}/{BUCKET_NAME}/{BUCKET_ELEMENT_ID}', method='PUT')
+@urlmatch(path='/api/v1/{SPACE_NAME}/{BUCKET_NAME}/{BUCKET_ELEMENT_ID}'.format(
+    SPACE_NAME=SPACE_NAME, BUCKET_NAME=BUCKET_NAME, BUCKET_ELEMENT_ID=BUCKET_ELEMENT_ID), method='PUT')
 def update_element_from_bucket_api_mock(url, request):
     return {
         'status_code': 200,
@@ -148,7 +150,8 @@ def update_element_from_bucket_api_mock(url, request):
     }
 
 
-@urlmatch(path=f'/api/v1/{SPACE_NAME}/{BUCKET_NAME}', method='GET')
+@urlmatch(path='/api/v1/{SPACE_NAME}/{BUCKET_NAME}'.format(
+    SPACE_NAME=SPACE_NAME, BUCKET_NAME=BUCKET_NAME), method='GET')
 def get_all_bucket_elements_api_mock(url, request):
     return {
         'status_code': 200,
@@ -167,7 +170,8 @@ def get_all_bucket_elements_api_mock(url, request):
     }
 
 
-@urlmatch(path=f'/api/v1/{SPACE_NAME}/{BUCKET_NAME}/{BUCKET_ELEMENT_ID}', method='GET')
+@urlmatch(path='/api/v1/{SPACE_NAME}/{BUCKET_NAME}/{BUCKET_ELEMENT_ID}'.format(
+    SPACE_NAME=SPACE_NAME, BUCKET_NAME=BUCKET_NAME, BUCKET_ELEMENT_ID=BUCKET_ELEMENT_ID), method='GET')
 def get_element_from_bucket_api_mock(url, request):
     return {
         'status_code': 200,
@@ -184,17 +188,43 @@ def get_element_from_bucket_api_mock(url, request):
     }
 
 
-@urlmatch(path=f'/api/v1/{SPACE_NAME}/{BUCKET_NAME}/{BUCKET_ELEMENT_ID}', method='PUT')
+@urlmatch(path='/api/v1/{SPACE_NAME}/{BUCKET_NAME}/{BUCKET_ELEMENT_ID}'.format(
+    SPACE_NAME=SPACE_NAME, BUCKET_NAME=BUCKET_NAME, BUCKET_ELEMENT_ID=BUCKET_ELEMENT_ID), method='PUT')
 def try_to_update_nonexistent_element_api_mock(url, request):
     return {
         'status_code': 404
     }
 
 
-@urlmatch(path=f'/api/v1/{SPACE_NAME}/{BUCKET_NAME}/{BUCKET_ELEMENT_ID}', method='GET')
+@urlmatch(path='/api/v1/{SPACE_NAME}/{BUCKET_NAME}/{BUCKET_ELEMENT_ID}'.format(
+    SPACE_NAME=SPACE_NAME, BUCKET_NAME=BUCKET_NAME, BUCKET_ELEMENT_ID=BUCKET_ELEMENT_ID), method='GET')
 def try_to_get_nonexistent_element_api_mock(url, request):
     return {
         'status_code': 404
+    }
+
+
+@urlmatch(path='/api/v1/{SPACE_NAME}/{BUCKET_NAME}/{BUCKET_ELEMENT_ID}'.format(
+    SPACE_NAME=SPACE_NAME, BUCKET_NAME=BUCKET_NAME, BUCKET_ELEMENT_ID=BUCKET_ELEMENT_ID), method='PUT')
+def try_to_pass_invalid_element_to_update_api_mock(url, request):
+    return {
+        'status_code': 400
+    }
+
+
+@urlmatch(path='/api/v1/{SPACE_NAME}/{BUCKET_NAME}/{BUCKET_ELEMENT_ID}'.format(
+    SPACE_NAME=SPACE_NAME, BUCKET_NAME=BUCKET_NAME, BUCKET_ELEMENT_ID=BUCKET_ELEMENT_ID), method='DELETE')
+def try_to_remove_nonexistent_element_api_mock(url, request):
+    return {
+        'status_code': 404
+    }
+
+
+@urlmatch(path='/api/v1/{SPACE_NAME}/{BUCKET_NAME}'.format(
+    SPACE_NAME=SPACE_NAME, BUCKET_NAME=BUCKET_NAME), method='POST')
+def try_to_pass_invalid_element_to_add_api_mock(url, request):
+    return {
+        'status_code': 400
     }
 
 
@@ -222,7 +252,7 @@ class BucketTest(TestCase):
         self.assertEqual(saved_element['bucketName'], BUCKET_NAME)
 
     @with_mocked_api(get_space_api_mock)
-    @with_mocked_api(remove_space_api_mock)
+    @with_mocked_api(remove_element_from_bucket_api_mock)
     def test_should_remove_element_from_bucket(self):
         # given
         bucket = easydb.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
@@ -299,11 +329,29 @@ class BucketTest(TestCase):
         with self.assertRaises(easydb.ElementNotFound):  # then
             bucket.get(BUCKET_ELEMENT_ID)  # when
 
+    @with_mocked_api(get_space_api_mock)
+    @with_mocked_api(try_to_pass_invalid_element_to_update_api_mock)
     def test_should_throw_error_when_passing_invalid_element_to_update(self):
-        pass
+        # given
+        bucket = easydb.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
 
+        with self.assertRaises(easydb.InvalidElementFormat):  # then
+            bucket.update(BUCKET_ELEMENT_ID, {'fieldWithInvalidValue': []})  # when
+
+    @with_mocked_api(get_space_api_mock)
+    @with_mocked_api(try_to_remove_nonexistent_element_api_mock)
     def test_should_throw_error_when_trying_to_remove_nonexistent_element(self):
-        pass
+        # given
+        bucket = easydb.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
 
+        with self.assertRaises(easydb.ElementNotFound):  # then
+            bucket.remove(BUCKET_ELEMENT_ID)  # when
+
+    @with_mocked_api(get_space_api_mock)
+    @with_mocked_api(try_to_pass_invalid_element_to_add_api_mock)
     def test_should_throw_error_when_passing_invalid_element_to_add(self):
-        pass
+        # given
+        bucket = easydb.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
+
+        with self.assertRaises(easydb.InvalidElementFormat):  # then
+            bucket.add({'fieldWithInvalidValue': []})  # when

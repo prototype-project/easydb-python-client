@@ -19,6 +19,10 @@ class ServerError(RuntimeError):
     pass
 
 
+class SpaceNotFound(ValueError):
+    pass
+
+
 class Bucket:
     def __init__(self, space, bucket_name):
         self.space = space
@@ -26,7 +30,8 @@ class Bucket:
 
     def add(self, element):
         response = requests.post(
-            f'{EASYDB_URL}/api/v1/{self.space.name}/{self.bucket_name}',
+            '{EASYDB_URL}/api/v1/{space_name}/{bucket_name}'.format(
+                EASYDB_URL=EASYDB_URL, space_name=self.space.name, bucket_name=self.bucket_name),
             json={
                 'fields': [{'name': field_name, 'value': field_value} for field_name, field_value in element.items()]
             })
@@ -44,7 +49,8 @@ class Bucket:
             raise ServerError()
 
     def remove(self, element_id):
-        response = requests.delete(f'{EASYDB_URL}/api/v1/{self.space.name}/{self.bucket_name}/{element_id}')
+        response = requests.delete('{EASYDB_URL}/api/v1/{space_name}/{bucket_name}/{element_id}'.format(
+            EASYDB_URL=EASYDB_URL, space_name=self.space.name, bucket_name=self.bucket_name, element_id=element_id))
         if response.status_code == 404:
             raise ElementNotFound()
         elif response.status_code == 500:
@@ -53,7 +59,8 @@ class Bucket:
             assert response.status_code == 200
 
     def update(self, element_id, element):
-        response = requests.put(f'{EASYDB_URL}/api/v1/{self.space.name}/{self.bucket_name}/{element_id}',
+        response = requests.put('{EASYDB_URL}/api/v1/{space_name}/{bucket_name}/{element_id}'.format(
+            EASYDB_URL=EASYDB_URL, space_name=self.space.name, bucket_name=self.bucket_name, element_id=element_id),
                                 json={
                                     'fields': [{'name': field_name, 'value': field_value} for field_name, field_value in element.items()]
                                 })
@@ -72,7 +79,8 @@ class Bucket:
             raise ServerError()
 
     def all(self):
-        response = requests.get(f'{EASYDB_URL}/api/v1/{self.space.name}/{self.bucket_name}')
+        response = requests.get('{EASYDB_URL}/api/v1/{space_name}/{bucket_name}'.format(
+            EASYDB_URL=EASYDB_URL, space_name=self.space.name, bucket_name=self.bucket_name))
         assert response.status_code == 200
         body = response.json()
         return [{
@@ -82,7 +90,8 @@ class Bucket:
         } for element in body]
 
     def get(self, element_id):
-        response = requests.get(f'{EASYDB_URL}/api/v1/{self.space.name}/{self.bucket_name}/{element_id}')
+        response = requests.get('{EASYDB_URL}/api/v1/{space_name}/{bucket_name}/{element_id}'.format(
+            EASYDB_URL=EASYDB_URL, space_name=self.space.name, bucket_name=self.bucket_name, element_id=element_id))
         if response.status_code == 200:
             body = response.json()
             return {
@@ -106,7 +115,7 @@ class Space:
 
 def create_space(unique_space_name):
     response = requests.post(
-        f'{EASYDB_URL}/api/v1/spaces',
+        '{EASYDB_URL}/api/v1/spaces'.format(EASYDB_URL=EASYDB_URL),
         json={'spaceName': unique_space_name}
     )
     if response.status_code == 201:
@@ -117,7 +126,7 @@ def create_space(unique_space_name):
 
 
 def get_space(space_name):
-    response = requests.get(f'{EASYDB_URL}/api/v1/spaces/{space_name}')
+    response = requests.get('{EASYDB_URL}/api/v1/spaces/{space_name}'.format(EASYDB_URL=EASYDB_URL, space_name=space_name))
     if response.status_code == 200:
         return Space(response.json()['spaceName'])
     else:
@@ -130,5 +139,10 @@ def space_exists(space_name):
 
 
 def remove_space(space_name):
-    response = requests.delete(f'{EASYDB_URL}/api/v1/spaces/{space_name}')
-    return response.status_code == 200
+    response = requests.delete('{EASYDB_URL}/api/v1/spaces/{space_name}'.format(EASYDB_URL=EASYDB_URL, space_name=space_name))
+    if response.status_code == 404:
+        raise SpaceNotFound()
+    elif response.status_code == 500:
+        raise ServerError()
+    else:
+        assert response.status_code == 200
