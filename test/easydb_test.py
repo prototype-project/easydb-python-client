@@ -57,6 +57,13 @@ def try_to_create_space_with_non_unique_name_api_mock(url, request):
     }
 
 
+@urlmatch(path='/api/v1/spaces/{SPACE_NAME}'.format(SPACE_NAME=SPACE_NAME), method='DELETE')
+def try_to_remove_nonexistent_space_api_mock(url, request):
+    return {
+        'status_code': 404
+    }
+
+
 class EasydbTest(TestCase):
 
     @with_mocked_api(create_space_api_mock)
@@ -103,8 +110,10 @@ class EasydbTest(TestCase):
         with self.assertRaises(easydb.SpaceAlreadyExists):  # then
             easydb.create_space(SPACE_NAME)  # when
 
+    @with_mocked_api(try_to_remove_nonexistent_space_api_mock)
     def test_should_throw_error_when_trying_to_remove_nonexistent_space(self):
-        pass
+        with self.assertRaises(easydb.SpaceNotFound):  # then
+            easydb.remove_space(SPACE_NAME)  # when
 
 
 @urlmatch(path='/api/v1/{SPACE_NAME}/{BUCKET_NAME}'.format(SPACE_NAME=SPACE_NAME, BUCKET_NAME=BUCKET_NAME), method='POST')
