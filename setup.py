@@ -1,8 +1,8 @@
 from distutils.core import setup
 
 setup(
-    name='easydb',
-    packages=['easydb'],
+    name='easydb_client',
+    packages=['easydb_client'],
     version='0.1',
     description='Client for easydb',
     author='Bartłomiej Bęczkowski',

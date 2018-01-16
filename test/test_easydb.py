@@ -1,7 +1,7 @@
 from unittest import TestCase
 import json
 from httmock import urlmatch, HTTMock
-import easydb
+import easydb_client
 
 SPACE_NAME = 'testSpace'
 BUCKET_ELEMENT_ID = 'testId'
@@ -76,7 +76,7 @@ class EasydbTest(TestCase):
     @with_mocked_api(create_space_api_mock)
     def test_should_create_new_space(self):
         # when
-        space = easydb.create_space(SPACE_NAME)
+        space = easydb_client.create_space(SPACE_NAME)
 
         # then
         self.assertIsNotNone(space)
@@ -89,7 +89,7 @@ class EasydbTest(TestCase):
         # given space
 
         # when
-        space = easydb.get_space(SPACE_NAME)
+        space = easydb_client.get_space(SPACE_NAME)
 
         # then
         self.assertIsNotNone(space)
@@ -99,7 +99,7 @@ class EasydbTest(TestCase):
         # given space
 
         # when
-        exists = easydb.space_exists(SPACE_NAME)
+        exists = easydb_client.space_exists(SPACE_NAME)
 
         # then
         self.assertTrue(exists)
@@ -107,25 +107,25 @@ class EasydbTest(TestCase):
     @with_mocked_api(remove_space_api_mock)
     def test_should_remove_space(self):
         # when
-        removed = easydb.remove_space(SPACE_NAME)
+        removed = easydb_client.remove_space(SPACE_NAME)
 
         # then
         self.assertIsNone(removed)
 
     @with_mocked_api(try_to_create_space_with_non_unique_name_api_mock)
     def test_should_throw_error_when_trying_to_create_space_with_non_unique_name(self):
-        with self.assertRaises(easydb.SpaceAlreadyExists):  # then
-            easydb.create_space(SPACE_NAME)  # when
+        with self.assertRaises(easydb_client.SpaceAlreadyExists):  # then
+            easydb_client.create_space(SPACE_NAME)  # when
 
     @with_mocked_api(try_to_remove_nonexistent_space_api_mock)
     def test_should_throw_error_when_trying_to_remove_nonexistent_space(self):
-        with self.assertRaises(easydb.SpaceNotFound):  # then
-            easydb.remove_space(SPACE_NAME)  # when
+        with self.assertRaises(easydb_client.SpaceNotFound):  # then
+            easydb_client.remove_space(SPACE_NAME)  # when
 
     @with_mocked_api(try_to_get_nonexistent_space_api_mock)
     def test_should_throw_error_when_trying_to_get_nonexistent_space(self):
-        with self.assertRaises(easydb.SpaceNotFound):  # then
-            easydb.get_space(SPACE_NAME)  # when
+        with self.assertRaises(easydb_client.SpaceNotFound):  # then
+            easydb_client.get_space(SPACE_NAME)  # when
 
 
 @urlmatch(path='/api/v1/{SPACE_NAME}/{BUCKET_NAME}'.format(SPACE_NAME=SPACE_NAME, BUCKET_NAME=BUCKET_NAME), method='POST')
@@ -255,7 +255,7 @@ class BucketTest(TestCase):
     @with_mocked_api(get_space_api_mock)
     def test_should_add_element_to_bucket(self):
         # given
-        space = easydb.get_space(SPACE_NAME)
+        space = easydb_client.get_space(SPACE_NAME)
 
         # and
         bucket = space.get_bucket(BUCKET_NAME)
@@ -276,7 +276,7 @@ class BucketTest(TestCase):
     @with_mocked_api(remove_element_from_bucket_api_mock)
     def test_should_remove_element_from_bucket(self):
         # given
-        bucket = easydb.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
+        bucket = easydb_client.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
         # and bucket element
 
         # when then
@@ -286,7 +286,7 @@ class BucketTest(TestCase):
     @with_mocked_api(update_element_from_bucket_api_mock)
     def test_should_update_element_in_bucket(self):
         # given
-        bucket = easydb.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
+        bucket = easydb_client.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
 
         # and bucket element
 
@@ -306,7 +306,7 @@ class BucketTest(TestCase):
     @with_mocked_api(get_all_bucket_elements_api_mock)
     def test_should_get_all_elements_from_bucket(self):
         # given
-        bucket = easydb.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
+        bucket = easydb_client.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
 
         # when
         elements = bucket.all()
@@ -318,7 +318,7 @@ class BucketTest(TestCase):
     @with_mocked_api(get_element_from_bucket_api_mock)
     def test_should_get_element_from_bucket(self):
         # given
-        bucket = easydb.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
+        bucket = easydb_client.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
 
         # when
         element = bucket.get(BUCKET_ELEMENT_ID)
@@ -336,43 +336,43 @@ class BucketTest(TestCase):
     @with_mocked_api(try_to_update_nonexistent_element_api_mock)
     def test_should_throw_error_when_trying_to_update_nonexistent_element(self):
         # given
-        bucket = easydb.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
+        bucket = easydb_client.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
 
-        with self.assertRaises(easydb.ElementNotFound):  # then
+        with self.assertRaises(easydb_client.ElementNotFound):  # then
             bucket.update(BUCKET_ELEMENT_ID, {'firstName': 'Johny'})  # when
 
     @with_mocked_api(get_space_api_mock)
     @with_mocked_api(try_to_get_nonexistent_element_api_mock)
     def test_should_throw_error_when_trying_to_get_nonexistent_element(self):
         # given
-        bucket = easydb.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
+        bucket = easydb_client.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
 
-        with self.assertRaises(easydb.ElementNotFound):  # then
+        with self.assertRaises(easydb_client.ElementNotFound):  # then
             bucket.get(BUCKET_ELEMENT_ID)  # when
 
     @with_mocked_api(get_space_api_mock)
     @with_mocked_api(try_to_pass_invalid_element_to_update_api_mock)
     def test_should_throw_error_when_passing_invalid_element_to_update(self):
         # given
-        bucket = easydb.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
+        bucket = easydb_client.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
 
-        with self.assertRaises(easydb.InvalidElementFormat):  # then
+        with self.assertRaises(easydb_client.InvalidElementFormat):  # then
             bucket.update(BUCKET_ELEMENT_ID, {'fieldWithInvalidValue': []})  # when
 
     @with_mocked_api(get_space_api_mock)
     @with_mocked_api(try_to_remove_nonexistent_element_api_mock)
     def test_should_throw_error_when_trying_to_remove_nonexistent_element(self):
         # given
-        bucket = easydb.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
+        bucket = easydb_client.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
 
-        with self.assertRaises(easydb.ElementNotFound):  # then
+        with self.assertRaises(easydb_client.ElementNotFound):  # then
             bucket.remove(BUCKET_ELEMENT_ID)  # when
 
     @with_mocked_api(get_space_api_mock)
     @with_mocked_api(try_to_pass_invalid_element_to_add_api_mock)
     def test_should_throw_error_when_passing_invalid_element_to_add(self):
         # given
-        bucket = easydb.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
+        bucket = easydb_client.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
 
-        with self.assertRaises(easydb.InvalidElementFormat):  # then
+        with self.assertRaises(easydb_client.InvalidElementFormat):  # then
             bucket.add({'fieldWithInvalidValue': []})  # when
