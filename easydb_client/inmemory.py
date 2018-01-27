@@ -5,7 +5,7 @@ from .easydb import SpaceNotFound
 from .easydb import ElementNotFound
 from .easydb import InvalidElementFormat
 
-# in memory, NOT-THREAD SAFE implementation of easydb client interface
+# in memory, NOT THREAD SAFE implementation of easydb client interface
 # for testing and local development
 
 
