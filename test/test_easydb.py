@@ -1,11 +1,30 @@
 from unittest import TestCase
 import json
 from httmock import urlmatch, HTTMock
-import easydb_client
 
 SPACE_NAME = 'testSpace'
 BUCKET_ELEMENT_ID = 'testId'
 BUCKET_NAME = 'testBucket'
+
+# Test for both easydb client and in memory version of easydb
+
+
+def run_for_both_client_and_in_memory(
+        in_memory_setup=lambda in_memory: None,
+        in_memory_cleanup=lambda in_memory: None):
+    def decorator(test_method):
+        def test_for_both_client_and_in_memory(self, *args, **kwargs):
+            import easydb_client
+            import easydb_client.inmemory as inmemory
+            test_method(self, easydb_client, *args, **kwargs)
+
+            in_memory_setup(inmemory)
+            test_method(self, inmemory, *args, **kwargs)
+            in_memory_cleanup(inmemory)
+
+        return test_for_both_client_and_in_memory
+
+    return decorator
 
 
 def with_mocked_api(api_mock):
@@ -74,7 +93,8 @@ def try_to_get_nonexistent_space_api_mock(url, request):
 class EasydbTest(TestCase):
 
     @with_mocked_api(create_space_api_mock)
-    def test_should_create_new_space(self):
+    @run_for_both_client_and_in_memory(in_memory_cleanup=lambda in_memory: in_memory.remove_space(SPACE_NAME))
+    def test_should_create_new_space(self, easydb_client):
         # when
         space = easydb_client.create_space(SPACE_NAME)
 
@@ -85,7 +105,11 @@ class EasydbTest(TestCase):
         self.assertEqual(space.name, SPACE_NAME)
 
     @with_mocked_api(get_space_api_mock)
-    def test_should_get_space(self):
+    @run_for_both_client_and_in_memory(
+        in_memory_setup=lambda in_memory: in_memory.create_space(SPACE_NAME),
+        in_memory_cleanup=lambda in_memory: in_memory.remove_space(SPACE_NAME)
+    )
+    def test_should_get_space(self, easydb_client):
         # given space
 
         # when
@@ -95,7 +119,11 @@ class EasydbTest(TestCase):
         self.assertIsNotNone(space)
 
     @with_mocked_api(space_exists_api_mock)
-    def test_should_tell_if_space_exists(self):
+    @run_for_both_client_and_in_memory(
+        in_memory_setup=lambda in_memory: in_memory.create_space(SPACE_NAME),
+        in_memory_cleanup=lambda in_memory: in_memory.remove_space(SPACE_NAME)
+    )
+    def test_should_tell_if_space_exists(self, easydb_client):
         # given space
 
         # when
@@ -105,7 +133,10 @@ class EasydbTest(TestCase):
         self.assertTrue(exists)
 
     @with_mocked_api(remove_space_api_mock)
-    def test_should_remove_space(self):
+    @run_for_both_client_and_in_memory(in_memory_setup=lambda in_memory: in_memory.create_space(SPACE_NAME))
+    def test_should_remove_space(self, easydb_client):
+        # given space
+
         # when
         removed = easydb_client.remove_space(SPACE_NAME)
 
@@ -113,22 +144,30 @@ class EasydbTest(TestCase):
         self.assertIsNone(removed)
 
     @with_mocked_api(try_to_create_space_with_non_unique_name_api_mock)
-    def test_should_throw_error_when_trying_to_create_space_with_non_unique_name(self):
+    @run_for_both_client_and_in_memory(
+        in_memory_setup=lambda in_memory: in_memory.create_space(SPACE_NAME),
+        in_memory_cleanup=lambda in_memory: in_memory.remove_space(SPACE_NAME)
+    )
+    def test_should_throw_error_when_trying_to_create_space_with_non_unique_name(self, easydb_client):
+        # given space with SPACE_NAME
         with self.assertRaises(easydb_client.SpaceAlreadyExists):  # then
             easydb_client.create_space(SPACE_NAME)  # when
 
     @with_mocked_api(try_to_remove_nonexistent_space_api_mock)
-    def test_should_throw_error_when_trying_to_remove_nonexistent_space(self):
+    @run_for_both_client_and_in_memory()
+    def test_should_throw_error_when_trying_to_remove_nonexistent_space(self, easydb_client):
         with self.assertRaises(easydb_client.SpaceNotFound):  # then
             easydb_client.remove_space(SPACE_NAME)  # when
 
     @with_mocked_api(try_to_get_nonexistent_space_api_mock)
-    def test_should_throw_error_when_trying_to_get_nonexistent_space(self):
+    @run_for_both_client_and_in_memory()
+    def test_should_throw_error_when_trying_to_get_nonexistent_space(self, easydb_client):
         with self.assertRaises(easydb_client.SpaceNotFound):  # then
             easydb_client.get_space(SPACE_NAME)  # when
 
 
-@urlmatch(path='/api/v1/{SPACE_NAME}/{BUCKET_NAME}'.format(SPACE_NAME=SPACE_NAME, BUCKET_NAME=BUCKET_NAME), method='POST')
+@urlmatch(path='/api/v1/{SPACE_NAME}/{BUCKET_NAME}'
+          .format(SPACE_NAME=SPACE_NAME, BUCKET_NAME=BUCKET_NAME), method='POST')
 def add_element_to_bucket_api_mock(url, request):
     return {
         'status_code': 201,

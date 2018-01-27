@@ -6,3 +6,5 @@ from .easydb import ElementNotFound
 from .easydb import SpaceAlreadyExists
 from .easydb import InvalidElementFormat
 from .easydb import SpaceNotFound
+
+from . import inmemory
