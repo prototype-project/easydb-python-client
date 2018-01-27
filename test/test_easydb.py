@@ -292,7 +292,11 @@ class BucketTest(TestCase):
 
     @with_mocked_api(add_element_to_bucket_api_mock)
     @with_mocked_api(get_space_api_mock)
-    def test_should_add_element_to_bucket(self):
+    @run_for_both_client_and_in_memory(
+        in_memory_setup=lambda in_memory: in_memory.create_space(SPACE_NAME),
+        in_memory_cleanup=lambda in_memory: in_memory.remove_space(SPACE_NAME)
+    )
+    def test_should_add_element_to_bucket(self, easydb_client):
         # given
         space = easydb_client.get_space(SPACE_NAME)
 
@@ -306,46 +310,67 @@ class BucketTest(TestCase):
         self.assertEqual(saved_element['fields']['firstName'], 'John')
 
         # and
-        self.assertEqual(saved_element['id'], BUCKET_ELEMENT_ID)
+        self.assertIsInstance(saved_element['id'], str)
 
         # and
         self.assertEqual(saved_element['bucketName'], BUCKET_NAME)
 
+    @with_mocked_api(add_element_to_bucket_api_mock)
     @with_mocked_api(get_space_api_mock)
     @with_mocked_api(remove_element_from_bucket_api_mock)
-    def test_should_remove_element_from_bucket(self):
+    @run_for_both_client_and_in_memory(
+        in_memory_setup=lambda in_memory: in_memory.create_space(SPACE_NAME),
+        in_memory_cleanup=lambda in_memory: in_memory.remove_space(SPACE_NAME)
+    )
+    def test_should_remove_element_from_bucket(self, easydb_client):
         # given
         bucket = easydb_client.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
-        # and bucket element
+
+        # and
+        saved_element = bucket.add({'firstName': 'John'})
 
         # when then
-        bucket.remove(BUCKET_ELEMENT_ID)
+        self.assertIsNone(bucket.remove(saved_element['id']))
 
+    @with_mocked_api(add_element_to_bucket_api_mock)
     @with_mocked_api(get_space_api_mock)
     @with_mocked_api(update_element_from_bucket_api_mock)
-    def test_should_update_element_in_bucket(self):
+    @run_for_both_client_and_in_memory(
+        in_memory_setup=lambda in_memory: in_memory.create_space(SPACE_NAME),
+        in_memory_cleanup=lambda in_memory: in_memory.remove_space(SPACE_NAME)
+    )
+    def test_should_update_element_in_bucket(self, easydb_client):
         # given
         bucket = easydb_client.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
 
-        # and bucket element
+        # and
+        saved_element = bucket.add({'firstName': 'John'})
 
         # when
-        updated_element = bucket.update(BUCKET_ELEMENT_ID, {'firstName': 'John'})
+        updated_element = bucket.update(saved_element['id'], {'firstName': 'John'})
 
         # then
         self.assertEqual(updated_element['fields']['firstName'], 'John')
 
         # and
-        self.assertEqual(updated_element['id'], BUCKET_ELEMENT_ID)
+        self.assertEqual(updated_element['id'], saved_element['id'])
 
         # and
         self.assertEqual(updated_element['bucketName'], BUCKET_NAME)
 
+    @with_mocked_api(add_element_to_bucket_api_mock)
     @with_mocked_api(get_space_api_mock)
     @with_mocked_api(get_all_bucket_elements_api_mock)
-    def test_should_get_all_elements_from_bucket(self):
+    @run_for_both_client_and_in_memory(
+        in_memory_setup=lambda in_memory: in_memory.create_space(SPACE_NAME),
+        in_memory_cleanup=lambda in_memory: in_memory.remove_space(SPACE_NAME)
+    )
+    def test_should_get_all_elements_from_bucket(self, easydb_client):
         # given
         bucket = easydb_client.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
+
+        # and
+        bucket.add({'firstName': 'John'})
 
         # when
         elements = bucket.all()
@@ -353,18 +378,26 @@ class BucketTest(TestCase):
         # then
         self.assertEqual(len(elements), 1)
 
+    @with_mocked_api(add_element_to_bucket_api_mock)
     @with_mocked_api(get_space_api_mock)
     @with_mocked_api(get_element_from_bucket_api_mock)
-    def test_should_get_element_from_bucket(self):
+    @run_for_both_client_and_in_memory(
+        in_memory_setup=lambda in_memory: in_memory.create_space(SPACE_NAME),
+        in_memory_cleanup=lambda in_memory: in_memory.remove_space(SPACE_NAME)
+    )
+    def test_should_get_element_from_bucket(self, easydb_client):
         # given
         bucket = easydb_client.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
 
+        # and
+        saved_element = bucket.add({'firstName': 'John'})
+
         # when
-        element = bucket.get(BUCKET_ELEMENT_ID)
+        element = bucket.get(saved_element['id'])
 
         # then
         self.assertEqual(element, {
-            'id': BUCKET_ELEMENT_ID,
+            'id': saved_element['id'],
             'bucketName': BUCKET_NAME,
             'fields': {
                 'firstName': 'John'
@@ -373,7 +406,11 @@ class BucketTest(TestCase):
 
     @with_mocked_api(get_space_api_mock)
     @with_mocked_api(try_to_update_nonexistent_element_api_mock)
-    def test_should_throw_error_when_trying_to_update_nonexistent_element(self):
+    @run_for_both_client_and_in_memory(
+        in_memory_setup=lambda in_memory: in_memory.create_space(SPACE_NAME),
+        in_memory_cleanup=lambda in_memory: in_memory.remove_space(SPACE_NAME)
+    )
+    def test_should_throw_error_when_trying_to_update_nonexistent_element(self, easydb_client):
         # given
         bucket = easydb_client.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
 
@@ -382,7 +419,11 @@ class BucketTest(TestCase):
 
     @with_mocked_api(get_space_api_mock)
     @with_mocked_api(try_to_get_nonexistent_element_api_mock)
-    def test_should_throw_error_when_trying_to_get_nonexistent_element(self):
+    @run_for_both_client_and_in_memory(
+        in_memory_setup=lambda in_memory: in_memory.create_space(SPACE_NAME),
+        in_memory_cleanup=lambda in_memory: in_memory.remove_space(SPACE_NAME)
+    )
+    def test_should_throw_error_when_trying_to_get_nonexistent_element(self, easydb_client):
         # given
         bucket = easydb_client.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
 
@@ -391,7 +432,11 @@ class BucketTest(TestCase):
 
     @with_mocked_api(get_space_api_mock)
     @with_mocked_api(try_to_pass_invalid_element_to_update_api_mock)
-    def test_should_throw_error_when_passing_invalid_element_to_update(self):
+    @run_for_both_client_and_in_memory(
+        in_memory_setup=lambda in_memory: in_memory.create_space(SPACE_NAME),
+        in_memory_cleanup=lambda in_memory: in_memory.remove_space(SPACE_NAME)
+    )
+    def test_should_throw_error_when_passing_invalid_element_to_update(self, easydb_client):
         # given
         bucket = easydb_client.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
 
@@ -400,7 +445,11 @@ class BucketTest(TestCase):
 
     @with_mocked_api(get_space_api_mock)
     @with_mocked_api(try_to_remove_nonexistent_element_api_mock)
-    def test_should_throw_error_when_trying_to_remove_nonexistent_element(self):
+    @run_for_both_client_and_in_memory(
+        in_memory_setup=lambda in_memory: in_memory.create_space(SPACE_NAME),
+        in_memory_cleanup=lambda in_memory: in_memory.remove_space(SPACE_NAME)
+    )
+    def test_should_throw_error_when_trying_to_remove_nonexistent_element(self, easydb_client):
         # given
         bucket = easydb_client.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
 
@@ -409,7 +458,11 @@ class BucketTest(TestCase):
 
     @with_mocked_api(get_space_api_mock)
     @with_mocked_api(try_to_pass_invalid_element_to_add_api_mock)
-    def test_should_throw_error_when_passing_invalid_element_to_add(self):
+    @run_for_both_client_and_in_memory(
+        in_memory_setup=lambda in_memory: in_memory.create_space(SPACE_NAME),
+        in_memory_cleanup=lambda in_memory: in_memory.remove_space(SPACE_NAME)
+    )
+    def test_should_throw_error_when_passing_invalid_element_to_add(self, easydb_client):
         # given
         bucket = easydb_client.get_space(SPACE_NAME).get_bucket(BUCKET_NAME)
 
