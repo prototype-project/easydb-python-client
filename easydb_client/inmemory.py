@@ -29,7 +29,7 @@ class ElementsRepository:
 
     @property
     def all(self):
-        return self._elements.values()
+        return list(self._elements.values())
 
     def exists(self, element_pk):
         return element_pk in self._elements
