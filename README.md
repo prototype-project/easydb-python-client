@@ -1,4 +1,7 @@
 # Client library for Easydb
+## Installation
+`pip install easydb_client`
+
 ## Managing spaces
 ```python
 import easydb_client as easydb
