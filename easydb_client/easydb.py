@@ -7,10 +7,6 @@ class ElementNotFound(ValueError):
     pass
 
 
-class SpaceAlreadyExists(ValueError):
-    pass
-
-
 class InvalidElementFormat(ValueError):
     pass
 
@@ -113,16 +109,10 @@ class Space:
         return Bucket(self, bucket_name)
 
 
-def create_space(unique_space_name):
-    response = requests.post(
-        '{EASYDB_URL}/api/v1/spaces'.format(EASYDB_URL=EASYDB_URL),
-        json={'spaceName': unique_space_name}
-    )
-    if response.status_code == 201:
-        return Space(response.json()['spaceName'])
-    else:  # 400
-        assert response.status_code == 400
-        raise SpaceAlreadyExists()
+def create_space():
+    response = requests.post('{EASYDB_URL}/api/v1/spaces'.format(EASYDB_URL=EASYDB_URL))
+    assert response.status_code == 201
+    return Space(response.json()['spaceName'])
 
 
 def get_space(space_name):
@@ -135,7 +125,11 @@ def get_space(space_name):
 
 
 def space_exists(space_name):
-    return get_space(space_name) is not None
+    try:
+        get_space(space_name)
+        return True
+    except SpaceNotFound:
+        return False
 
 
 def remove_space(space_name):

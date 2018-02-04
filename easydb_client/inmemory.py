@@ -1,6 +1,5 @@
 from uuid import uuid1
 
-from .easydb import SpaceAlreadyExists
 from .easydb import SpaceNotFound
 from .easydb import ElementNotFound
 from .easydb import InvalidElementFormat
@@ -97,10 +96,8 @@ class SpaceRepository:
     def __init__(self):
         self.spaces = {}
 
-    def add(self, space_name):
-        if space_name in self.spaces:
-            raise SpaceAlreadyExists()
-
+    def add(self):
+        space_name = uuid1()
         self.spaces[space_name] = InMemorySpace(space_name)
         return self.spaces[space_name]
 
@@ -117,6 +114,9 @@ class SpaceRepository:
             raise SpaceNotFound()
         del self.spaces[space_name]
 
+    def remove_all(self):
+        self.spaces = {}
+
 
 space_repository = SpaceRepository()
 
@@ -125,3 +125,5 @@ create_space = space_repository.add
 get_space = space_repository.get
 space_exists = space_repository.exists
 remove_space = space_repository.remove
+
+remove_all_spaces = space_repository.remove_all
