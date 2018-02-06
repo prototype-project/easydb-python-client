@@ -64,3 +64,6 @@ print(updated_neo)
 
 ## Testing
 `easydb_client.inmemory` contains in-memory implementation that you can use for automated testing/local development. In-memory implementation is NOT thread safe.
+
+## Requirements
+`python3.0+`
