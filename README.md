@@ -47,7 +47,7 @@ print(smith)
 print(neo)
 
 # GET ALL ELEMENTS
-all_users = users_bucket.all()
+all_users = list(users_bucket.all())
 print(all_users)
 
 # GET SINGLE ELEMENT
