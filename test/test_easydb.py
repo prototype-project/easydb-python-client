@@ -1,10 +1,12 @@
 from unittest import TestCase
 import json
 from httmock import urlmatch, HTTMock
+from easydb_client.easydb import EASYDB_URL
 
 SPACE_NAME = 'testSpace'
 BUCKET_ELEMENT_ID = 'testId'
 BUCKET_NAME = 'testBucket'
+
 
 # Test for both easydb client and in memory version of easydb
 
@@ -32,6 +34,7 @@ def with_mocked_api(api_mock):
         def decorated_test(self):
             with HTTMock(api_mock):
                 test(self)
+
         return decorated_test
 
     return decorator
@@ -59,6 +62,7 @@ def space_exists_api_mock(url, request):
         'status_code': 200,
         'content': json.dumps({'spaceName': SPACE_NAME})
     }
+
 
 @urlmatch(path='/api/v1/spaces/nonexistent'.format(SPACE_NAME=SPACE_NAME), method='GET')
 def space_does_not_exist_api_mock(url, request):
@@ -89,7 +93,6 @@ def try_to_get_nonexistent_space_api_mock(url, request):
 
 
 class EasydbTest(TestCase):
-
     @with_mocked_api(create_space_api_mock)
     @run_for_both_client_and_in_memory(
         in_memory_cleanup=lambda in_memory: in_memory.remove_all_spaces()
@@ -217,21 +220,44 @@ def update_element_from_bucket_api_mock(url, request):
 @urlmatch(path='/api/v1/{SPACE_NAME}/{BUCKET_NAME}'.format(
     SPACE_NAME=SPACE_NAME, BUCKET_NAME=BUCKET_NAME), method='GET')
 def get_all_bucket_elements_api_mock(url, request):
-    return {
-        'status_code': 200,
-        'content': json.dumps([
-            {
-                'id': BUCKET_ELEMENT_ID,
-                'bucketName': BUCKET_NAME,
-                'fields': [
+    if not url.query:
+        return {
+            'status_code': 200,
+            'content': json.dumps({
+                'next': f'{EASYDB_URL}/api/v1/{SPACE_NAME}/{BUCKET_NAME}?limit=1&offset=1',
+                'elements': [
                     {
-                        'name': 'firstName',
-                        'value': 'John'
+                        'id': BUCKET_ELEMENT_ID,
+                        'bucketName': BUCKET_NAME,
+                        'fields': [
+                            {
+                                'name': 'firstName',
+                                'value': 'John'
+                            }
+                        ]
                     }
                 ]
-            }
-        ])
-    }
+            })
+        }
+    else:
+        return {
+            'status_code': 200,
+            'content': json.dumps({
+                'next': None,
+                'elements': [
+                    {
+                        'id': BUCKET_ELEMENT_ID,
+                        'bucketName': BUCKET_NAME,
+                        'fields': [
+                            {
+                                'name': 'firstName',
+                                'value': 'Mark'
+                            }
+                        ]
+                    }
+                ]
+            })
+        }
 
 
 @urlmatch(path='/api/v1/{SPACE_NAME}/{BUCKET_NAME}/{BUCKET_ELEMENT_ID}'.format(
@@ -293,7 +319,6 @@ def try_to_pass_invalid_element_to_add_api_mock(url, request):
 
 
 class BucketTest(TestCase):
-
     @with_mocked_api(add_element_to_bucket_api_mock)
     @with_mocked_api(create_space_api_mock)
     @run_for_both_client_and_in_memory(
@@ -380,12 +405,13 @@ class BucketTest(TestCase):
 
         # and
         bucket.add({'firstName': 'John'})
+        bucket.add({'firstName': 'Mark'})
 
         # when
-        elements = bucket.all()
+        elements = list(bucket.all())
 
         # then
-        self.assertEqual(len(elements), 1)
+        self.assertEqual(len(elements), 2)
 
     @with_mocked_api(add_element_to_bucket_api_mock)
     @with_mocked_api(create_space_api_mock)

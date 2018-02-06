@@ -75,15 +75,29 @@ class Bucket:
             raise ServerError()
 
     def all(self):
-        response = requests.get('{EASYDB_URL}/api/v1/{space_name}/{bucket_name}'.format(
-            EASYDB_URL=EASYDB_URL, space_name=self.space.name, bucket_name=self.bucket_name))
+        next_url, part = self._fetch_part()
+        for e in part:
+            yield e
+
+        while next_url:
+            next_url, part = self._fetch_part(next_url)
+            for e in part:
+                yield e
+
+    def _fetch_part(self, url=None):
+        response = requests.get(url or self._build_url())
         assert response.status_code == 200
         body = response.json()
-        return [{
+        return body['next'], ({
             'id': element['id'],
             'bucketName': element['bucketName'],
             'fields': {field['name']: field['value'] for field in element['fields']}
-        } for element in body]
+        } for element in body['elements'])
+
+    def _build_url(self):
+        result = '{EASYDB_URL}/api/v1/{space_name}/{bucket_name}'.format(
+            EASYDB_URL=EASYDB_URL, space_name=self.space.name, bucket_name=self.bucket_name)
+        return result
 
     def get(self, element_id):
         response = requests.get('{EASYDB_URL}/api/v1/{space_name}/{bucket_name}/{element_id}'.format(
