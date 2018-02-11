@@ -225,7 +225,7 @@ def get_all_bucket_elements_api_mock(url, request):
             'status_code': 200,
             'content': json.dumps({
                 'next': f'{EASYDB_URL}/api/v1/{SPACE_NAME}/{BUCKET_NAME}?limit=1&offset=1',
-                'elements': [
+                'results': [
                     {
                         'id': BUCKET_ELEMENT_ID,
                         'bucketName': BUCKET_NAME,
@@ -244,7 +244,7 @@ def get_all_bucket_elements_api_mock(url, request):
             'status_code': 200,
             'content': json.dumps({
                 'next': None,
-                'elements': [
+                'results': [
                     {
                         'id': BUCKET_ELEMENT_ID,
                         'bucketName': BUCKET_NAME,

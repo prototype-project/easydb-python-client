@@ -92,7 +92,7 @@ class Bucket:
             'id': element['id'],
             'bucketName': element['bucketName'],
             'fields': {field['name']: field['value'] for field in element['fields']}
-        } for element in body['elements'])
+        } for element in body['results'])
 
     def _build_url(self):
         result = '{EASYDB_URL}/api/v1/{space_name}/{bucket_name}'.format(
