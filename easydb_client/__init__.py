@@ -7,3 +7,4 @@ from .easydb import InvalidElementFormat
 from .easydb import SpaceNotFound
 
 from . import inmemory
+from . import query
