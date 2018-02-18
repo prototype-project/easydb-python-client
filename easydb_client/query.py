@@ -1,4 +1,4 @@
-class InvalidCriteriaException(ValueError):
+class InvalidQuery(ValueError):
     pass
 
 
@@ -17,7 +17,7 @@ class WhereCriteria:
 
     def _validate(self):
         if not isinstance(self.expected_value, str) or not isinstance(self.field_name, str):
-            raise InvalidCriteriaException('Field name and expected value should be string')
+            raise InvalidQuery('Field name and expected value should be string')
         return self
 
     def __and__(self, other):

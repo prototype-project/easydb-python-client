@@ -470,6 +470,28 @@ class BucketTest(TestCase):
 
     @with_mocked_api(add_element_to_bucket_api_mock)
     @with_mocked_api(create_space_api_mock)
+    @run_for_both_client_and_in_memory(
+        in_memory_cleanup=lambda in_memory: in_memory.remove_all_spaces()
+    )
+    def test_should_throw_error_when_passing_invalid_query_to_filter(self, easydb_client):
+        # given
+        space = easydb_client.create_space()
+
+        # and
+        bucket = space.get_bucket(BUCKET_NAME)
+
+        # and
+        bucket.add({'firstName': 'John'})
+
+        # and
+        first_name_eq_mark = easydb_client.query.where('firstName').eq('Mark')
+        last_name_eq_smith = easydb_client.query.where('lastName').eq(None)
+
+        with self.assertRaises(easydb_client.query.InvalidQuery):  # then
+            list(bucket.filter(first_name_eq_mark & last_name_eq_smith))  # when
+
+    @with_mocked_api(add_element_to_bucket_api_mock)
+    @with_mocked_api(create_space_api_mock)
     @with_mocked_api(get_element_from_bucket_api_mock)
     @run_for_both_client_and_in_memory(
         in_memory_cleanup=lambda in_memory: in_memory.remove_all_spaces()

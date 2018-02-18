@@ -29,8 +29,8 @@ class ElementsRepository:
         del self._elements[element_pk]
 
     def filter(self, q):
-        result = [e for e in self._elements.values()]
-        return self._filter_by_query(result, q)
+        result = (e for e in self._elements.values())
+        return self._filter_by_query(result, q._validate())
 
     def _filter_by_query(self, result, q):
         if isinstance(q, query.WhereCriteria):
