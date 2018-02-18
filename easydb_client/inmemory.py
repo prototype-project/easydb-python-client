@@ -34,7 +34,7 @@ class ElementsRepository:
 
     def _filter_by_query(self, result, q):
         if isinstance(q, query.WhereCriteria):
-            return (e for e in result if e['fields'][q.field_name] == q.expected_value)
+            return (e for e in result if q.field_name in e['fields'] and e['fields'][q.field_name] == q.expected_value)
         elif isinstance(q, query.AndCriteria):
             result = self._filter_by_query(result, q.left)
             return self._filter_by_query(result, q.right)
