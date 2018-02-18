@@ -1,4 +1,5 @@
 import requests
+from . import query as Q
 
 EASYDB_URL = 'https://easy-db.herokuapp.com'
 
@@ -74,18 +75,32 @@ class Bucket:
             assert response.status_code == 500
             raise ServerError()
 
+    def filter(self, q):
+        q_string = self._produce_query_string_from_query(q._validate())
+        yield from self._fetch(f'{self._build_url()}?{q_string}')
+
+    def _produce_query_string_from_query(self, q):
+        if isinstance(q, Q.WhereCriteria):
+            return f'{q.field_name}={q.expected_value}'
+        elif isinstance(q, Q.AndCriteria):
+            left_result = self._produce_query_string_from_query(q.left)
+            right_result = self._produce_query_string_from_query(q.right)
+            return f'{left_result}&{right_result}'
+
     def all(self):
-        next_url, part = self._fetch_part()
-        for e in part:
-            yield e
+        url = self._build_url()
+        yield from self._fetch(url)
+
+    def _fetch(self, url):
+        next_url, part = self._fetch_part(url)
+        yield from part
 
         while next_url:
             next_url, part = self._fetch_part(next_url)
-            for e in part:
-                yield e
+            yield from part
 
-    def _fetch_part(self, url=None):
-        response = requests.get(url or self._build_url())
+    def _fetch_part(self, url):
+        response = requests.get(url)
         assert response.status_code == 200
         body = response.json()
         return body['next'], ({

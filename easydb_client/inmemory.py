@@ -4,6 +4,8 @@ from .easydb import SpaceNotFound
 from .easydb import ElementNotFound
 from .easydb import InvalidElementFormat
 
+from . import query
+
 # in memory, NOT THREAD SAFE implementation of easydb client interface
 # for testing and local development
 
@@ -25,6 +27,17 @@ class ElementsRepository:
         if not self.exists(element_pk):
             raise ElementNotFound()
         del self._elements[element_pk]
+
+    def filter(self, q):
+        result = [e for e in self._elements.values()]
+        return self._filter_by_query(result, q)
+
+    def _filter_by_query(self, result, q):
+        if isinstance(q, query.WhereCriteria):
+            return (e for e in result if e['fields'][q.field_name] == q.expected_value)
+        elif isinstance(q, query.AndCriteria):
+            result = self._filter_by_query(result, q.left)
+            return self._filter_by_query(result, q.right)
 
     @property
     def all(self):
@@ -76,6 +89,9 @@ class InMemoryBucket:
 
     def all(self):
         return self._elements_repository.all
+
+    def filter(self, q):
+        return self._elements_repository.filter(q)
 
     def get(self, element_pk):
         return self._elements_repository.get(element_pk)

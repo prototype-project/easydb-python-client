@@ -260,6 +260,33 @@ def get_all_bucket_elements_api_mock(url, request):
         }
 
 
+@urlmatch(path='/api/v1/{SPACE_NAME}/{BUCKET_NAME}'.format(
+    SPACE_NAME=SPACE_NAME, BUCKET_NAME=BUCKET_NAME), method='GET')
+def get_filtered_bucket_elements_api_mock(url, request):
+    return {
+        'status_code': 200,
+        'content': json.dumps({
+            'next': None,
+            'results': [
+                {
+                    'id': BUCKET_ELEMENT_ID,
+                    'bucketName': BUCKET_NAME,
+                    'fields': [
+                        {
+                            'name': 'firstName',
+                            'value': 'Mark'
+                        },
+                        {
+                            'name': 'lastName',
+                            'value': 'Smith'
+                        }
+                    ]
+                }
+            ]
+        })
+    }
+
+
 @urlmatch(path='/api/v1/{SPACE_NAME}/{BUCKET_NAME}/{BUCKET_ELEMENT_ID}'.format(
     SPACE_NAME=SPACE_NAME, BUCKET_NAME=BUCKET_NAME, BUCKET_ELEMENT_ID=BUCKET_ELEMENT_ID), method='GET')
 def get_element_from_bucket_api_mock(url, request):
@@ -412,6 +439,34 @@ class BucketTest(TestCase):
 
         # then
         self.assertEqual(len(elements), 2)
+
+    @with_mocked_api(add_element_to_bucket_api_mock)
+    @with_mocked_api(create_space_api_mock)
+    @with_mocked_api(get_filtered_bucket_elements_api_mock)
+    @run_for_both_client_and_in_memory(
+        in_memory_cleanup=lambda in_memory: in_memory.remove_all_spaces()
+    )
+    def test_should_get_elements_filtered_by_multiple_fields_from_bucket(self, easydb_client):
+        # given
+        space = easydb_client.create_space()
+
+        # and
+        bucket = space.get_bucket(BUCKET_NAME)
+
+        # and
+        bucket.add({'firstName': 'John'})
+        bucket.add({'firstName': 'Mark', 'lastName': 'Smith'})
+        bucket.add({'firstName': 'Mark', 'lastName': 'Robinson'})
+
+        # and
+        first_name_eq_mark = easydb_client.query.where('firstName').eq('Mark')
+        last_name_eq_smith = easydb_client.query.where('lastName').eq('Smith')
+
+        # when
+        elements = list(bucket.filter(first_name_eq_mark & last_name_eq_smith))
+
+        # then
+        self.assertEqual(len(elements), 1)
 
     @with_mocked_api(add_element_to_bucket_api_mock)
     @with_mocked_api(create_space_api_mock)
